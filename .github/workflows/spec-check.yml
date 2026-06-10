@@ -1,0 +1,19 @@
+name: spec-check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  spec-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # The view must be the exact fold of the ledger (REPO-4, FOLD-4).
+      - run: python specs/fold_spec.py check
+      # Conformance tests cite the requirement IDs they verify.
+      - run: python -m unittest discover -s tests -v
