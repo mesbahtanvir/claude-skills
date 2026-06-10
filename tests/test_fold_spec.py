@@ -1,4 +1,4 @@
-"""Conformance tests for the spec ledger system, citing the requirement IDs
+"""Conformance tests for the spec-driven system, citing the requirement IDs
 they verify (see specs/SPEC.md). Run: python -m unittest discover -s tests
 """
 
@@ -19,17 +19,17 @@ def entry(title, body):
     return f"---\ntitle: {title}\ndate: 2026-06-10\n---\n\n{body}\n"
 
 
-class LedgerCase(unittest.TestCase):
+class EntriesCase(unittest.TestCase):
     """Base: a throwaway specs dir and a CLI helper."""
 
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.specs = Path(tmp.name) / "specs"
-        (self.specs / "ledger").mkdir(parents=True)
+        (self.specs / "entries").mkdir(parents=True)
 
     def write(self, name, text):
-        (self.specs / "ledger" / name).write_text(text, encoding="utf-8")
+        (self.specs / "entries" / name).write_text(text, encoding="utf-8")
 
     def cli(self, *args):
         return subprocess.run(
@@ -41,9 +41,9 @@ class LedgerCase(unittest.TestCase):
         return (self.specs / "SPEC.md").read_text(encoding="utf-8")
 
 
-class TestFoldSemantics(LedgerCase):
+class TestFoldSemantics(EntriesCase):
     def test_redefinition_newest_text_wins(self):
-        """[LEDGER-4] Re-declaring an active ID redefines it; newest wins."""
+        """[SPEC-4] Re-declaring an active ID redefines it; newest wins."""
         self.write("0001-a.md", entry("A", "- **API-1**: Pages MUST be capped at 50 items."))
         self.write("0002-b.md", entry("B", "- **API-1**: Pages MUST be capped at 25 items."))
         result = self.cli("fold")
@@ -52,21 +52,21 @@ class TestFoldSemantics(LedgerCase):
         self.assertNotIn("capped at 50", self.spec_text())
 
     def test_entries_replayed_in_numeric_order(self):
-        """[LEDGER-1] Numeric order, not lexical order, decides the replay."""
+        """[SPEC-1] Numeric order, not lexical order, decides the replay."""
         self.write("9-old.md", entry("Old", "- **API-1**: Value MUST be old."))
         self.write("0010-new.md", entry("New", "- **API-1**: Value MUST be new."))
         self.assertEqual(self.cli("fold").returncode, 0)
         self.assertIn("MUST be new", self.spec_text())
 
     def test_continuation_lines_join_statement(self):
-        """[LEDGER-3] Two-space continuations are part of the requirement."""
+        """[SPEC-3] Two-space continuations are part of the requirement."""
         self.write("0001-a.md", entry(
             "A", "- **API-1**: The statement MUST wrap across\n  two source lines."))
         self.assertEqual(self.cli("fold").returncode, 0)
         self.assertIn("MUST wrap across two source lines", self.spec_text())
 
     def test_supersede_and_retire_close_ids(self):
-        """[LEDGER-5][LEDGER-6][FOLD-3] Closed IDs are listed with cause."""
+        """[SPEC-5][SPEC-6][FOLD-3] Closed IDs are listed with cause."""
         self.write("0001-a.md", entry("A", (
             "- **API-1**: Old auth error MUST be a string.\n"
             "- **API-2**: CSV export MUST exist.\n"
@@ -89,7 +89,7 @@ class TestFoldSemantics(LedgerCase):
         self.assertNotIn("API-2**", active_section)
 
     def test_feature_block_newest_wins(self):
-        """[LEDGER-8] The newest Feature block per prefix sets the section."""
+        """[SPEC-8] The newest Feature block per prefix sets the section."""
         self.write("0001-a.md", entry("A", (
             "## Feature: API — Alpha title\n\nAlpha description.\n\n"
             "- **API-1**: Something MUST hold."
@@ -101,9 +101,9 @@ class TestFoldSemantics(LedgerCase):
         self.assertNotIn("Alpha", self.spec_text())
 
 
-class TestFoldOutput(LedgerCase):
+class TestFoldOutput(EntriesCase):
     def test_fold_is_deterministic(self):
-        """[FOLD-1] Folding the same ledger twice yields identical bytes."""
+        """[FOLD-1] Folding the same entries twice yields identical bytes."""
         self.write("0001-a.md", entry("A", "- **API-1**: X MUST hold."))
         self.assertEqual(self.cli("fold").returncode, 0)
         first = self.spec_text()
@@ -123,7 +123,7 @@ class TestFoldOutput(LedgerCase):
         self.assertIn("_[0001 → 0002]_", spec)
 
 
-class TestGuardrails(LedgerCase):
+class TestGuardrails(EntriesCase):
     def test_check_fails_when_stale_or_missing(self):
         """[FOLD-4] check exits nonzero on a missing or stale SPEC.md."""
         self.write("0001-a.md", entry("A", "- **API-1**: X MUST hold."))
@@ -135,7 +135,7 @@ class TestGuardrails(LedgerCase):
         self.assertEqual(self.cli("check").returncode, 1)  # stale
 
     def test_validate_rejects_revival(self):
-        """[LEDGER-7][FOLD-5] A closed ID cannot be redefined."""
+        """[SPEC-7][FOLD-5] A closed ID cannot be redefined."""
         self.write("0001-a.md", entry("A", "- **API-1**: X MUST hold.\n- **API-2**: Y MUST hold."))
         self.write("0002-b.md", entry("B", "## Retires\n\n- **API-1**: Removed."))
         self.write("0003-c.md", entry("C", "- **API-1**: Back from the dead."))
@@ -164,7 +164,7 @@ class TestGuardrails(LedgerCase):
         self.assertIn("duplicate entry number", result.stderr)
 
 
-class TestAuthoringHelpers(LedgerCase):
+class TestAuthoringHelpers(EntriesCase):
     def test_new_scaffolds_next_number(self):
         """[FOLD-6] new creates the next-numbered entry and prints its path."""
         self.write("0007-existing.md", entry("Existing", "- **API-1**: X MUST hold."))
@@ -211,11 +211,11 @@ class TestRepoConformance(unittest.TestCase):
     def test_repo_fold_script_matches_skill_copy(self):
         """[REPO-5] specs/fold_spec.py is byte-identical to the skill's copy."""
         repo_copy = SCRIPT.read_bytes()
-        skill_copy = (REPO / "spec-ledger" / "scripts" / "fold_spec.py").read_bytes()
+        skill_copy = (REPO / "spec-driven" / "scripts" / "fold_spec.py").read_bytes()
         self.assertEqual(repo_copy, skill_copy)
 
     def test_repo_spec_is_current(self):
-        """[REPO-4][FOLD-4] This repository's own SPEC.md matches its ledger."""
+        """[REPO-4][FOLD-4] This repository's own SPEC.md matches its entries."""
         result = subprocess.run(
             [sys.executable, str(SCRIPT), "check"],
             capture_output=True, text=True, cwd=REPO,

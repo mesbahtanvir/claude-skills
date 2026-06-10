@@ -1,9 +1,9 @@
-# Bootstrapping a ledger in an existing codebase
+# Bootstrapping spec-driven development in an existing codebase
 
-Goal: an existing repo gains `specs/ledger/` whose fold accurately describes
-what the code does **today**. The genesis entries are an opening balance, not
-a wish list — if the first audit after bootstrap finds drift, the bootstrap
-was done wrong.
+Goal: an existing repo gains `specs/entries/` whose fold accurately describes
+what the code does **today**. The genesis entries are a faithful snapshot,
+not a wish list — if the first audit after bootstrap finds drift, the
+bootstrap was done wrong.
 
 ## 1. Inventory actual behavior
 
@@ -38,7 +38,7 @@ Calibration:
   you'd freely refactor.
 - **Describe what IS.** If the code caps pages at 50, write 50 — even if 25
   would be better. Improvements come as ordinary entries afterward, so the
-  ledger shows the change happening (that's its job).
+  spec shows the change happening (that's its job).
 - **Small is fine.** A 10-requirement genesis that's accurate beats a
   60-requirement one that's aspirational.
 
@@ -69,7 +69,7 @@ unspecced, and list every judgment call prominently in the summary.
    are normal at bootstrap — note them as candidates for new tests rather
    than blocking on full coverage.
 5. Offer the CI check (`python specs/fold_spec.py check` + tests) so the
-   ledger discipline holds from the first PR after adoption.
+   spec discipline holds from the first PR after adoption.
 
-After this, the repo behaves like any ledger repo: changes go through
+After this, the repo behaves like any spec-driven repo: changes go through
 "Making a change" in SKILL.md, and the genesis entries are never edited again.

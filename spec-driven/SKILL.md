@@ -1,53 +1,52 @@
 ---
-name: spec-ledger
+name: spec-driven
 description: >-
-  Spec-driven development with an append-only spec ledger. The spec is the
-  source of truth: code implements what the spec says, every behavior-changing
-  PR carries a numbered ledger entry under specs/ledger/, and specs/SPEC.md is
-  the generated, always-consistent view of the whole ledger. Use this skill
-  whenever the repo contains a specs/ledger/ directory — every feature request,
-  behavior change, bug fix, or "what should X do" question in such a repo goes
-  through it, even if the user never says "spec". Also use it when the user
-  mentions spec-driven development, writing or updating specs or requirements
-  before coding, keeping specs in sync with code, auditing code against a
-  spec, or adopting specs in an existing codebase.
+  Spec-driven development where the spec is the source of truth. Append-only,
+  numbered spec entries under specs/entries/ fold into a generated
+  specs/SPEC.md — the consistent current view — and code implements that
+  view. Every behavior-changing PR carries a spec entry. Use this skill
+  whenever the repo contains a specs/entries/ directory — every feature
+  request, behavior change, bug fix, or "what should X do" question in such a
+  repo goes through it, even if the user never says "spec". Also use it when
+  the user mentions spec-driven development, writing or updating specs or
+  requirements before coding, keeping specs in sync with code, auditing code
+  against a spec, or adopting specs in an existing codebase.
 ---
 
-# Spec Ledger
+# Spec-Driven Development
 
-Spec-driven development where the spec works like a bank ledger: entries are
-**append-only**, newer entries **override** older ones, and serializing
-(folding) the ledger always yields one **consistent current view**. Code
-exists to implement that view.
+The spec works the way a bank ledger works: entries are **append-only**,
+newer entries **override** older ones, and serializing (folding) them always
+yields one **consistent current view**. Code exists to implement that view.
 
 ## The contract
 
 1. **The spec is the source of truth.** When code and spec disagree, the spec
    wins: fix the code — or, if the new behavior is actually desired, append an
    entry that changes the spec. Never let code drift silently.
-2. **The ledger is append-only.** Files in `specs/ledger/` are never edited
+2. **Entries are append-only.** Files in `specs/entries/` are never edited
    after they merge. To change a requirement, append a new entry that
    redefines or retires it. Why this matters: reviewers approved those entries
-   as written. Editing one rewrites history people already relied on — exactly
-   like editing a posted bank transaction. Corrections are new transactions.
+   as written. Editing one rewrites history people already relied on;
+   corrections are new entries.
 3. **`specs/SPEC.md` is generated, never hand-edited.** It is the fold of the
-   ledger. Regenerate it with `python specs/fold_spec.py fold` after appending
-   an entry.
+   entries. Regenerate it with `python specs/fold_spec.py fold` after
+   appending an entry.
 4. **Spec and code travel together.** A behavior-changing PR contains: the new
-   ledger entry, the regenerated `SPEC.md`, the implementation, and tests that
+   spec entry, the regenerated `SPEC.md`, the implementation, and tests that
    cite the requirement IDs they verify.
 
 ## Recognizing the situation
 
 | Situation | Do this |
 | --- | --- |
-| Repo has `specs/ledger/` and the user asks for any feature, change, or fix | **Making a change** below — even if they never mention specs |
+| Repo has `specs/entries/` and the user asks for any feature, change, or fix | **Making a change** below — even if they never mention specs |
 | User wants spec-driven development in a brand-new project | **Init** below |
-| Existing codebase without a ledger; user wants to adopt specs | **Bootstrap** — read [references/bootstrap.md](references/bootstrap.md) |
+| Existing codebase without specs; user wants to adopt them | **Bootstrap** — read [references/bootstrap.md](references/bootstrap.md) |
 | "Does the code still match the spec?" | **Audit** below |
 | "What is X supposed to do?" | Read `specs/SPEC.md` and answer, citing requirement IDs |
 
-## Does this change need a ledger entry?
+## Does this change need a spec entry?
 
 An entry is needed **iff the change alters what the system should do** —
 behavior added, changed, or removed.
@@ -89,7 +88,7 @@ behavior added, changed, or removed.
 
 ## Entry format (essentials)
 
-`specs/ledger/0007-rate-limiting.md`:
+`specs/entries/0007-rate-limiting.md`:
 
 ```markdown
 ---
@@ -116,7 +115,7 @@ Abuse incidents on /search; we need per-key limits.
 - **API-6**: CSV export is removed from the public API.
 ```
 
-The override semantics, in ledger terms:
+The override semantics:
 
 - New ID (`API-9`, `API-10`) → **new requirement**. Mint with `next-id API`.
 - Existing ID (`API-3`) → **redefinition**; at fold time the newest text wins.
@@ -124,7 +123,7 @@ The override semantics, in ledger terms:
   by this one. Use when restructuring, not for simple edits.
 - `## Retires` → behavior **removed** with no replacement.
 - IDs are never reused or revived once closed — mint a fresh one. The fold
-  script validates all of this and refuses to serialize an inconsistent ledger.
+  script validates all of this and refuses to serialize an inconsistent spec.
 
 Requirement style: one testable behavior per ID; MUST/SHOULD/MAY; concrete
 values; describe *what* the system does, not how it's implemented. Read
@@ -135,7 +134,8 @@ or feature description blocks.
 ## The fold script
 
 `specs/fold_spec.py` is self-contained (Python 3.8+, stdlib only). If a
-ledger repo is missing it, copy it from this skill's `scripts/fold_spec.py`.
+spec-driven repo is missing it, copy it from this skill's
+`scripts/fold_spec.py`.
 
 ```
 python specs/fold_spec.py new "Title here"   # scaffold the next-numbered entry
@@ -147,18 +147,18 @@ python specs/fold_spec.py check              # validate + fail if SPEC.md is sta
 
 ## Init (new project)
 
-1. Create `specs/ledger/` and copy this skill's `scripts/fold_spec.py` to
+1. Create `specs/entries/` and copy this skill's `scripts/fold_spec.py` to
    `specs/fold_spec.py`.
 2. Write `0001-<project-slug>.md` capturing the initial intended behavior —
-   even if it's three requirements. The first entry is just the first
-   transaction, not a grand design document.
+   even if it's three requirements. The first entry is a starting point, not
+   a grand design document.
 3. `python specs/fold_spec.py fold`, then implement to the view.
 4. Offer CI: a job running `python specs/fold_spec.py check` plus the test
-   suite keeps ledger, view, and code from drifting on every PR.
+   suite keeps entries, view, and code from drifting on every PR.
 
 ## Audit (code ↔ spec drift)
 
-1. `python specs/fold_spec.py check` — the view must match the ledger before
+1. `python specs/fold_spec.py check` — the view must match the entries before
    anything else is checked against it.
 2. For every active requirement in `SPEC.md`, look for evidence: implementing
    code, and tests citing the ID. Grep for the IDs first; read the code where

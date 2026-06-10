@@ -1,10 +1,9 @@
-# Ledger entry format — full reference
+# Spec entry format — full reference
 
 Everything `fold_spec.py` parses, plus authoring guidance. The parser is
 deliberately strict: a line that *almost* looks like a requirement is flagged
 by `validate` rather than silently ignored, because a requirement that fails
-to parse silently disappears from the fold — the spec equivalent of a lost
-transaction.
+to parse silently disappears from the fold — a lost piece of the contract.
 
 ## Contents
 
@@ -19,11 +18,11 @@ transaction.
 - [Writing good requirements](#writing-good-requirements)
 - [Worked examples](#worked-examples)
 - [Concurrent branches](#concurrent-branches)
-- [What does not belong in the ledger](#what-does-not-belong-in-the-ledger)
+- [What does not belong in the spec](#what-does-not-belong-in-the-spec)
 
 ## File naming
 
-`specs/ledger/NNNN-short-slug.md` — a zero-padded number and a kebab-case
+`specs/entries/NNNN-short-slug.md` — a zero-padded number and a kebab-case
 slug. Numbers are unique and strictly ordered; the fold replays entries in
 numeric order, so the number IS the timestamp. `fold_spec.py new "Title"`
 picks the next number for you.
@@ -92,7 +91,8 @@ mint ──▶ active ──▶ (redefined: still active, newest text wins)
 - **Redefine**: a later entry repeats the same ID with new text. The fold
   keeps the newest text and records provenance (`[0002 → 0007]` = born in
   0002, last modified in 0007). This is the normal way to change a
-  requirement — the ID is the account, the redefinition is the new posting.
+  requirement — the ID is the stable handle, the redefinition is the new
+  value.
 - **Supersede**: `- **API-11** (supersedes API-4, API-5): …` closes API-4 and
   API-5 and points readers at API-11. Use when restructuring — merging or
   splitting requirements — where "same ID, new text" would be misleading.
@@ -111,9 +111,9 @@ Everything callers can reach over HTTP. Versioned under /v1.
 ```
 
 A feature block sets the section title and description for a prefix in
-SPEC.md. Like requirements, it follows ledger semantics: the newest feature
-block for a prefix wins. It's optional — a prefix with no block still gets a
-section, titled by the bare prefix.
+SPEC.md. Like requirements, it folds: the newest feature block for a prefix
+wins. It's optional — a prefix with no block still gets a section, titled by
+the bare prefix.
 
 ## Retires
 
@@ -211,9 +211,9 @@ merges second renumbers their entry file and re-mints colliding IDs (the
 entry isn't merged yet, so this is not an edit of history), reruns `fold`,
 and recommits. `check` in CI is what catches the case where nobody noticed.
 
-## What does not belong in the ledger
+## What does not belong in the spec
 
 Task lists, code snippets, schedules, design alternatives that were not
-chosen. The ledger records *what the system should do*; PRs and design docs
-record how and why-not-otherwise. Keeping the ledger lean is what keeps the
+chosen. The spec records *what the system should do*; PRs and design docs
+record how and why-not-otherwise. Keeping entries lean is what keeps the
 fold readable — it is the document everyone actually lives in.

@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-"""Fold an append-only spec ledger into a single consistent view.
+"""Fold append-only spec entries into a single consistent view.
 
-A spec ledger is a directory of numbered, append-only entry files
-(specs/ledger/0001-some-title.md). Each entry adds, redefines, supersedes,
-or retires requirements. Folding replays the ledger in order — newest wins —
-and writes specs/SPEC.md, the current consistent view.
+A spec-driven repo keeps numbered, append-only entry files
+(specs/entries/0001-some-title.md). Each entry adds, redefines, supersedes,
+or retires requirements. Folding replays the entries in numeric order —
+newest wins — and writes specs/SPEC.md, the current consistent view.
 
 Self-contained: Python 3.8+, standard library only. This file is meant to be
-copied into a repo at specs/fold_spec.py and committed alongside the ledger.
+copied into a repo at specs/fold_spec.py and committed alongside the entries.
 
 Commands:
     fold            validate + regenerate SPEC.md
     check           validate + exit 1 if SPEC.md is missing or stale (CI)
-    validate        lint the ledger
+    validate        lint the spec entries
     new TITLE...    scaffold the next-numbered entry file
     next-id PREFIX  print the next free requirement number for a prefix
 """
@@ -151,13 +151,13 @@ def parse_entry(path, number, warnings):
     return entry
 
 
-def load_entries(ledger_dir, errors, warnings):
+def load_entries(entries_dir, errors, warnings):
     entries = []
     seen_numbers = {}
-    if not ledger_dir.is_dir():
-        errors.append(f"ledger directory not found: {ledger_dir}")
+    if not entries_dir.is_dir():
+        errors.append(f"entries directory not found: {entries_dir}")
         return entries
-    for path in sorted(ledger_dir.iterdir()):
+    for path in sorted(entries_dir.iterdir()):
         if not path.is_file():
             continue
         m = ENTRY_FILE_RE.match(path.name)
@@ -178,7 +178,7 @@ def load_entries(ledger_dir, errors, warnings):
 
 
 def replay(entries, errors, warnings):
-    """Replay the ledger in order. Returns (active, closed, features)."""
+    """Replay the entries in order. Returns (active, closed, features)."""
     active = {}    # id -> {"text", "born", "last"}
     closed = {}    # id -> {"kind": "superseded"|"retired", "by", "entry", "reason"}
     features = {}  # prefix -> {"title", "desc", "entry"}
@@ -255,11 +255,11 @@ def render(entries, active, closed, features):
     lines = [
         "# Specification",
         "",
-        "> **Generated — do not edit.** This file is the fold of `specs/ledger/`.",
-        "> To change the spec, append a new ledger entry and run"
+        "> **Generated — do not edit.** This file is the fold of `specs/entries/`.",
+        "> To change the spec, append a new entry and run"
         " `python specs/fold_spec.py fold`.",
         "",
-        f"_{len(entries)} ledger entries folded (latest: {last:04d}) — "
+        f"_{len(entries)} spec entries folded (latest: {last:04d}) — "
         f"{len(active)} active requirements, {len(closed)} closed._",
         "",
     ]
@@ -300,7 +300,7 @@ def resolve_specs_dir(arg):
     if arg:
         return Path(arg)
     script_dir = Path(__file__).resolve().parent
-    if (script_dir / "ledger").is_dir():
+    if (script_dir / "entries").is_dir():
         return script_dir
     return Path("specs")
 
@@ -320,11 +320,11 @@ def slugify(title):
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--dir", help="specs directory (default: the script's own directory "
-                                      "if it contains ledger/, else ./specs)")
+                                      "if it contains entries/, else ./specs)")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("fold", help="validate + regenerate SPEC.md")
     sub.add_parser("check", help="validate + fail if SPEC.md is missing or stale")
-    sub.add_parser("validate", help="lint the ledger")
+    sub.add_parser("validate", help="lint the spec entries")
     p_new = sub.add_parser("new", help="scaffold the next-numbered entry")
     p_new.add_argument("title", nargs="+")
     p_next = sub.add_parser("next-id", help="next free requirement number for a prefix")
@@ -332,19 +332,19 @@ def main():
     args = parser.parse_args()
 
     specs_dir = resolve_specs_dir(args.dir)
-    ledger_dir = specs_dir / "ledger"
+    entries_dir = specs_dir / "entries"
     spec_path = specs_dir / "SPEC.md"
 
     if args.command == "new":
-        ledger_dir.mkdir(parents=True, exist_ok=True)
+        entries_dir.mkdir(parents=True, exist_ok=True)
         numbers = [
             int(ENTRY_FILE_RE.match(p.name).group(1))
-            for p in ledger_dir.iterdir()
+            for p in entries_dir.iterdir()
             if p.is_file() and ENTRY_FILE_RE.match(p.name)
         ]
         number = max(numbers) + 1 if numbers else 1
         title = " ".join(args.title)
-        path = ledger_dir / f"{number:04d}-{slugify(title)}.md"
+        path = entries_dir / f"{number:04d}-{slugify(title)}.md"
         path.write_text(
             NEW_TEMPLATE.format(title=title, date=datetime.date.today().isoformat()),
             encoding="utf-8",
@@ -353,9 +353,9 @@ def main():
         return 0
 
     errors, warnings = [], []
-    entries = load_entries(ledger_dir, errors, warnings)
+    entries = load_entries(entries_dir, errors, warnings)
     if not entries and not errors:
-        errors.append(f"no ledger entries found in {ledger_dir}")
+        errors.append(f"no spec entries found in {entries_dir}")
     active, closed, features = replay(entries, errors, warnings) if entries else ({}, {}, {})
 
     if args.command == "next-id":
