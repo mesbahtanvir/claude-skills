@@ -3,24 +3,50 @@
   "evals": [
     {
       "id": 0,
-      "eval_name": "feature-request-in-spec-repo",
+      "eval_name": "eval-0-feature-request",
       "prompt": "We're getting hammered by scrapers on the taskboard. Add rate limiting: 100 requests per minute per API key, and when a client goes over the limit they should get a clear throttled error that tells them when they can retry. The repo is at {FIXTURE}/taskboard.",
       "expected_output": "A new numbered spec entry under specs/entries/ with freshly minted requirement IDs for rate limiting (no edits to existing entries), specs/SPEC.md regenerated so fold check passes, an implementation of per-key rate limiting, and tests citing the new requirement IDs. Full test suite passes.",
-      "files": ["fixtures/taskboard"]
+      "files": ["fixtures/taskboard"],
+      "assertions": [
+        "A new spec entry file (number > 0003) exists under specs/entries/ describing rate limiting",
+        "Pre-existing entries 0001-0003 are byte-identical to the pristine fixture (append-only held)",
+        "python3 specs/fold_spec.py check passes (SPEC.md is the exact fold of the entries)",
+        "SPEC.md contains rate-limiting requirement(s) with freshly minted IDs (no reuse of TASK-1..5 or AUTH-1..2)",
+        "At least one test cites a new rate-limiting requirement ID in its name or docstring",
+        "Rate limiting is actually implemented: exceeding 100 requests/min for one key produces a distinct throttled error that conveys when to retry",
+        "Full test suite passes (python3 -m unittest discover -s tests)"
+      ]
     },
     {
       "id": 1,
-      "eval_name": "modify-and-retire-behavior",
+      "eval_name": "eval-1-modify-retire",
       "prompt": "Two product decisions for the taskboard repo at {FIXTURE}/taskboard: the page size cap drops from 50 to 25, and the CSV export feature is dead — remove it entirely. Make sure everything that needs to change actually changes.",
       "expected_output": "One new spec entry that redefines the page-cap requirement under its existing ID and retires the CSV export requirement; older entries byte-identical; SPEC.md shows the new cap with updated provenance and lists the CSV requirement under Closed requirements; export code and its tests removed; cap logic and tests updated; fold check and test suite pass.",
-      "files": ["fixtures/taskboard"]
+      "files": ["fixtures/taskboard"],
+      "assertions": [
+        "A new spec entry redefines TASK-3 (same ID reused) with the 25-item cap",
+        "TASK-5 (CSV export) is retired: it appears under Closed requirements in SPEC.md, not as an active requirement",
+        "Pre-existing entries 0001-0003 are byte-identical to the pristine fixture (append-only held)",
+        "python3 specs/fold_spec.py check passes",
+        "export_csv is removed from the library code and no test exercises it",
+        "Page cap behavior and its test now use 25, and the full test suite passes"
+      ]
     },
     {
       "id": 2,
-      "eval_name": "bootstrap-existing-codebase",
+      "eval_name": "eval-2-bootstrap",
       "prompt": "I keep losing track of what linkshort is actually supposed to do — the README is stale and the tests only cover part of it. I want to adopt spec-driven development on this repo: the spec should be the source of truth from now on. Set it up based on what the code does today. Repo: {FIXTURE}/linkshort.",
       "expected_output": "specs/entries/ created with genesis entries describing current observable behavior (accurate to the code, not the stale README), specs/fold_spec.py installed, specs/SPEC.md generated and consistent with the entries, requirement IDs with feature prefixes, no behavior changes to the code, existing tests still pass.",
-      "files": ["fixtures/linkshort"]
+      "files": ["fixtures/linkshort"],
+      "assertions": [
+        "specs/entries/ exists with at least one genesis entry, and specs/fold_spec.py is installed",
+        "python3 specs/fold_spec.py check passes (SPEC.md generated and consistent)",
+        "SPEC.md describes 6-character short codes (what the code does), not the README's claimed 8",
+        "SPEC.md does not claim click analytics or expiring links (stale README features that don't exist)",
+        "SPEC.md covers custom aliases and same-URL deduplication (real behaviors the tests miss)",
+        "Library code is byte-identical to the pristine fixture (bootstrap describes, never changes behavior)",
+        "Original test suite still passes"
+      ]
     }
   ]
 }
