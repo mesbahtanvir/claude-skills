@@ -1,0 +1,17 @@
+{
+  "name": "claude-skills",
+  "owner": {
+    "name": "Mesbah Tanvir",
+    "url": "https://github.com/mesbahtanvir"
+  },
+  "metadata": {
+    "description": "Mesbah's Claude Code skills. Currently ships spec-driven: spec-driven development with an append-only spec folded into a consistent view."
+  },
+  "plugins": [
+    {
+      "name": "claude-skills",
+      "source": "./",
+      "description": "Skills by Mesbah Tanvir. Currently ships spec-driven: spec-driven development where append-only spec entries are the source of truth, folded into a consistent SPEC.md that code implements."
+    }
+  ]
+}

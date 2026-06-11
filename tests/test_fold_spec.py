@@ -2,6 +2,7 @@
 they verify (see specs/SPEC.md). Run: python -m unittest discover -s tests
 """
 
+import json
 import re
 import subprocess
 import sys
@@ -11,8 +12,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 SCRIPT = REPO / "specs" / "fold_spec.py"
-
-SKIP_DIRS = {".git", ".github", "specs", "tests"}
+SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
 
 
 def entry(title, body):
@@ -193,11 +193,8 @@ class TestRepoConformance(unittest.TestCase):
         self.assertTrue(imports <= allowed, f"unexpected imports: {imports - allowed}")
 
     def test_skills_declare_matching_names(self):
-        """[REPO-1][REPO-2] Each skill dir has SKILL.md with name == dirname."""
-        skill_dirs = [
-            d for d in REPO.iterdir()
-            if d.is_dir() and d.name not in SKIP_DIRS and not d.name.startswith(".")
-        ]
+        """[REPO-1][REPO-2] Each dir under skills/ has SKILL.md, name == dirname."""
+        skill_dirs = [d for d in (REPO / "skills").iterdir() if d.is_dir()]
         self.assertTrue(skill_dirs, "no skill directories found")
         for d in skill_dirs:
             skill_md = d / "SKILL.md"
@@ -211,8 +208,24 @@ class TestRepoConformance(unittest.TestCase):
     def test_repo_fold_script_matches_skill_copy(self):
         """[REPO-5] specs/fold_spec.py is byte-identical to the skill's copy."""
         repo_copy = SCRIPT.read_bytes()
-        skill_copy = (REPO / "spec-driven" / "scripts" / "fold_spec.py").read_bytes()
+        skill_copy = (REPO / "skills" / "spec-driven" / "scripts" / "fold_spec.py").read_bytes()
         self.assertEqual(repo_copy, skill_copy)
+
+    def test_marketplace_manifest(self):
+        """[REPO-6] marketplace.json lists the claude-skills plugin with a
+        source that resolves to a directory containing the skills/ tree."""
+        manifest = json.loads((REPO / ".claude-plugin" / "marketplace.json").read_text())
+        plugins = [p for p in manifest.get("plugins", []) if p.get("name") == "claude-skills"]
+        self.assertEqual(len(plugins), 1, "expected exactly one claude-skills plugin")
+        plugin_root = (REPO / plugins[0]["source"]).resolve()
+        self.assertTrue((plugin_root / "skills").is_dir(),
+                        f"plugin source {plugin_root} has no skills/ tree")
+
+    def test_plugin_manifest(self):
+        """[REPO-7] plugin.json declares name claude-skills and a semver version."""
+        manifest = json.loads((REPO / ".claude-plugin" / "plugin.json").read_text())
+        self.assertEqual(manifest.get("name"), "claude-skills")
+        self.assertRegex(manifest.get("version", ""), SEMVER_RE)
 
     def test_repo_spec_is_current(self):
         """[REPO-4][FOLD-4] This repository's own SPEC.md matches its entries."""

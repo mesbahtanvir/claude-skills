@@ -1,0 +1,11 @@
+{
+  "name": "claude-skills",
+  "description": "Skills by Mesbah Tanvir. Currently ships spec-driven: spec-driven development where append-only spec entries are the source of truth, folded into a consistent SPEC.md that code implements.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Mesbah Tanvir",
+    "url": "https://github.com/mesbahtanvir"
+  },
+  "homepage": "https://github.com/mesbahtanvir/claude-skills",
+  "repository": "https://github.com/mesbahtanvir/claude-skills"
+}
