@@ -10,7 +10,7 @@ In any Claude Code session:
 
 ```
 /plugin marketplace add mesbahtanvir/claude-skills
-/plugin install claude-skills@claude-skills
+/plugin install claude-skills@mesbahtanvir
 ```
 
 Skills trigger automatically when a request matches their description; invoke

@@ -3,7 +3,7 @@
 > **Generated — do not edit.** This file is the fold of `specs/entries/`.
 > To change the spec, append a new entry and run `python specs/fold_spec.py fold`.
 
-_5 spec entries folded (latest: 0005) — 23 active requirements, 8 closed._
+_6 spec entries folded (latest: 0006) — 23 active requirements, 8 closed._
 
 ## FOLD — The fold script
 
@@ -27,7 +27,7 @@ claude-skills is a collection of Claude Code skills, one directory per skill, go
 - **REPO-3** — Skill resources SHOULD follow the standard layout: `references/` for documentation loaded on demand, `scripts/` for executable helpers, `assets/` for files used in output. _[0001]_
 - **REPO-4** — Every PR that changes what this repository's contents should do MUST append a spec entry under `specs/entries/` and regenerate `specs/SPEC.md`. _[0001 → 0004]_
 - **REPO-5** — `specs/fold_spec.py` MUST be byte-identical to `skills/spec-driven/scripts/fold_spec.py` — the skill ships the canonical copy, and this repo eats its own dogfood. _[0001 → 0005]_
-- **REPO-6** — `.claude-plugin/marketplace.json` MUST parse as JSON and list a plugin named `claude-skills` whose source resolves to a directory of this repository containing the `skills/` tree. _[0005]_
+- **REPO-6** — `.claude-plugin/marketplace.json` MUST parse as JSON, declare the marketplace name `mesbahtanvir`, and list a plugin named `claude-skills` whose source resolves to a directory of this repository containing the `skills/` tree. _[0005 → 0006]_
 - **REPO-7** — `.claude-plugin/plugin.json` MUST declare the plugin name `claude-skills` and a semantic version (MAJOR.MINOR.PATCH). _[0005]_
 
 ## SPEC — Spec entries and fold semantics

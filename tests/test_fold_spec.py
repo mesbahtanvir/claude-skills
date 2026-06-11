@@ -212,9 +212,10 @@ class TestRepoConformance(unittest.TestCase):
         self.assertEqual(repo_copy, skill_copy)
 
     def test_marketplace_manifest(self):
-        """[REPO-6] marketplace.json lists the claude-skills plugin with a
-        source that resolves to a directory containing the skills/ tree."""
+        """[REPO-6] marketplace.json is named mesbahtanvir and lists the
+        claude-skills plugin with a source containing the skills/ tree."""
         manifest = json.loads((REPO / ".claude-plugin" / "marketplace.json").read_text())
+        self.assertEqual(manifest.get("name"), "mesbahtanvir")
         plugins = [p for p in manifest.get("plugins", []) if p.get("name") == "claude-skills"]
         self.assertEqual(len(plugins), 1, "expected exactly one claude-skills plugin")
         plugin_root = (REPO / plugins[0]["source"]).resolve()
